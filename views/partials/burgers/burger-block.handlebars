@@ -1,0 +1,13 @@
+<tr>
+	<td>
+	{{burger_name}}
+	</td>
+	<td>
+	<button class="change-devour btn btn-info" data-id="{{id}}" data-newdevour="{{devour}}">
+		{{#if devour}}Devour it!{{else}}Wrong Order{{/if}}
+	</button>
+	</td>
+	<td>
+	<button class="delete-burger btn btn-outline-info" data-id="{{this.id}}"><i class="fas fa-trash-alt fa-lg"></i></button>
+	</td>
+</tr>
