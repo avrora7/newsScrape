@@ -2,10 +2,9 @@ var express = require("express");
 var bodyParser = require("body-parser");
 var logger = require("morgan");
 var mongoose = require("mongoose");
-
 var axios = require("axios");
 var cheerio = require("cheerio");
-
+var request = require("request");
 var db = require("./models");
 
 var PORT = 3000;
@@ -13,11 +12,8 @@ var PORT = 3000;
 var app = express();
 
 app.use(logger("dev"));
-
 app.use(bodyParser.urlencoded({ extended: true }));
-
 app.use(express.static("public"));
-
 app.use(bodyParser.json());
 
 var exphbs = require("express-handlebars");
@@ -32,83 +28,53 @@ mongoose.Promise = Promise;
 mongoose.connect(MONGODB_URI, { useNewUrlParser: true });
 
 app.get("/", function (req, res) {
-
-    var hbsObject = {
-        articles: [
-            {
-                headline: "headline1",
-                link: "http://ibm.com",
-                summary: "sum 1",
-                notes: [
-                    {
-                        title:"Note1",
-                        body:"body1"
-                    },
-                    {
-                        title:"Note 2",
-                        body:"Body 2"
-                    }
-                ]
-            },
-            {
-                headline: "headlin21",
-                link: "http://ibm.com",
-                summary: "sum 2",
-                notes: [
-                    {
-                        title:"Note3",
-                        body:"body3"
-                    },
-                    {
-                        title:"Note 4",
-                        body:"Body 4"
-                    }
-                ]
+    db.Article.find({})
+        .then(function (dbArticles) {
+            var uniqueArtLinks = {};
+            for (var i = 0; i < dbArticles.length; i++) {
+                var nextLink = dbArticles[i].link;
+                uniqueArtLinks[nextLink] = 1;
             }
-        ]
-    };
-
-    res.render("index", hbsObject);
-});
-
-// Routes
-
-// A GET route for scraping the echoJS website
-app.get("/scrape", function (req, res) {
-    // First, we grab the body of the html with request
-    axios.get("http://www.echojs.com/").then(function (response) {
-        // Then, we load that into cheerio and save it to $ for a shorthand selector
-        var $ = cheerio.load(response.data);
-
-        // Now, we grab every h2 within an article tag, and do the following:
-        $("article h2").each(function (i, element) {
-            // Save an empty result object
-            var result = {};
-
-            // Add the text and href of every link, and save them as properties of the result object
-            result.title = $(this)
-                .children("a")
-                .text();
-            result.link = $(this)
-                .children("a")
-                .attr("href");
-
-            // Create a new Article using the `result` object built from scraping
-            db.Article.create(result)
-                .then(function (dbArticle) {
-                    // View the added result in the console
-                    console.log(dbArticle);
-                })
-                .catch(function (err) {
-                    // If an error occurred, send it to the client
-                    return res.json(err);
+            getFromCheerio(function (results) {
+                trueResults = [];
+                for (var i = 0; i < results.length; i++) {
+                    if (uniqueArtLinks[results[i].link] == null) {
+                        trueResults.push(results[i]);
+                    }
+                }
+                db.Article.insertMany(trueResults, function (err, dbMany) {
+                    db.Article.find({})
+                        .populate('notes')
+                        .exec(function (err, dbAll) {
+                            console.log("c=" + dbAll)
+                            var hbsObject = {
+                                articles: dbAll
+                            };
+                            res.render("index", hbsObject);
+                        });
                 });
-        });
-
-        // If we were able to successfully scrape and save an Article, send a message to the client
-        res.send("Scrape Complete");
-    });
+            });
+        })
 });
+
+function getFromCheerio(callback) {
+    request("https://www.wsj.com/", function (error, response, html) {
+        var $ = cheerio.load(html);
+        var results = [];
+
+        $(".wsj-card").each(function (i, element) {
+            var news = {
+                headline: $(element).find("h3").text(),
+                link: $(element).find("a").attr("href"),
+                summary: $(element).find(".wsj-summary span:first-child").text()
+            }
+            if (news.headline && news.summary && news.link) {
+                results.push(news);
+            }
+        });
+        callback(results);
+    });
+}
 
 // Route for getting all Articles from the db
 app.get("/articles", function (req, res) {
