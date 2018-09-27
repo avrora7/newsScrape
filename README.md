@@ -6,9 +6,9 @@
 ## Why The WSJ Article Scrape
 *  Whenever a user visits the site, the app scrapes stories from ```https://www.wsj.com/``` and displays them for the user. Each scraped article is saved to the application database. The app displays the following information for each article:
 
- * Headline 
- * Summary 
- * URL 
+* Headline 
+* Summary 
+* URL 
 
 * Users also are able to leave comments on the articles displayed and revisit them later, as well as delete comments left on articles. All stored comments are visible to every user.
 
