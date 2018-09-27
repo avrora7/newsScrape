@@ -1,21 +1,33 @@
-<h1 class="text-center">Article Collection</h1>
+<br>
+<h1 class="text-center">The Wall Street Journal Article Scrape</h1>
 
 {{#each articles}}
 <br>
 <div class="card" style="">
   <div class="card-body">
-    <h5 class="card-title"><a target="_blank" href="{{link}}" class="">{{headline}}<a /></h5>
+    <h4 class="card-title"><a target="_blank" href="{{link}}" class="">{{headline}}<a /></h4>
     <p class="card-text">{{summary}}</p>
-    Notes:<br>
+    <h5>Comments: </h5><br>
+
     {{#each notes}}
-    {{title}}<br>
+
+    <div class="alert alert-warning alert-dismissible fade show" role="alert">
+      <strong>{{title}}</strong><br>{{body}}
+      <button type="button" data-id="{{_id}}" data-parent="{{../_id}}" class="close" data-dismiss="alert" aria-label="Close">
+        <span aria-hidden="true">&times;</span>
+      </button>
+    </div>
+    <br>
+
     {{/each}}
+
     <hr>
     <form>
-      <h6>Add new note</h6>
-      <textarea class="form-control"></textarea>
+      <h6>Add New Comment</h6>
+      <input class="form-control" id="title_{{_id}}" placeholder="Title" /><br>
+      <textarea class="form-control" id="body_{{_id}}" placeholder="Comment" ></textarea>
       <br>
-      <button class="btn btn-info">Add</button>
+      <button type="button" class="btn btn-primary addNoteButton" data-id="{{_id}}">Add</button>
     </form>
   </div>
 </div>
